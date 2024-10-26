@@ -32,7 +32,7 @@ location_table: Dict[str, WOWLocationData] = {
     "Elwynn Forest - Blackrock Invasion":      WOWLocationData("Elwynn Forest",  221523_0026389),
     "Elwynn Forest - Extinguishing Hope":      WOWLocationData("Elwynn Forest",  221523_0026391),
     "Elwynn Forest - Ending the Invasion!":    WOWLocationData("Elwynn Forest",  221523_0026390),
-    "Elwynn Forest - Report to Goldshire":     WOWLocationData("Elwynn Forest",  221523_0000051),
+    "Elwynn Forest - Report to Goldshire":     WOWLocationData("Elwynn Forest",  221523_0000054),
     "Elwynn Forest - Fear No Evil":            WOWLocationData("Elwynn Forest",  221523_0028806),
     "Elwynn Forest - Rest and Relaxation":     WOWLocationData("Elwynn Forest",  221523_0037112),
     "Elwynn Forest - Gold Dust Exchange":      WOWLocationData("Elwynn Forest",  221523_0000047),

@@ -170,6 +170,8 @@ def set_rules(wowworld):
         lambda state: state.has("NPC: Elwynn Forest - Guard Thomas", player))
     add_rule(wowworld.get_location("Elwynn Forest - Fine Linen Goods"),
         lambda state: state.has("NPC: Elwynn Forest - Sara Timberlain", player))
+    add_rule(wowworld.get_location("Elwynn Forest - A Bundle of Trouble"),
+        lambda state: state.has("NPC: Elwynn Forest - Sara Timberlain", player))
     add_rule(wowworld.get_location("Elwynn Forest - The Collector"),
         lambda state: state.has("NPC: Elwynn Forest - Marshal Patterson", player))
     add_rule(wowworld.get_location("Elwynn Forest - Manhunt"),

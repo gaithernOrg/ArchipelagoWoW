@@ -52,6 +52,7 @@ def create_regions(multiworld: MultiWorld, player: int, options):
     regions["Elwynn Forest"].locations.append("Elwynn Forest - WANTED: James Clark")
     regions["Elwynn Forest"].locations.append("Elwynn Forest - Protect the Frontier")
     regions["Elwynn Forest"].locations.append("Elwynn Forest - Fine Linen Goods")
+    regions["Elwynn Forest"].locations.append("Elwynn Forest - A Bundle of Trouble")
     regions["Elwynn Forest"].locations.append("Elwynn Forest - The Collector")
     regions["Elwynn Forest"].locations.append("Elwynn Forest - Manhunt")
     regions["Elwynn Forest"].locations.append("Elwynn Forest - Riverpaw Gnoll Bounty")

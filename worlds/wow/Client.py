@@ -41,6 +41,9 @@ class WOWContext(CommonContext):
     items_handling = 0b111  # full remote
     npcs = []
     equipment = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    last_sent_lua_txt = ""
+    last_sent_locations = []
+    communication_file_last_updated = None
     saved_variables_location = "N:/WoW/World of Warcraft/_retail_/WTF/Account/77341304#1/Dalaran/Kailaylarl/SavedVariables/wow_ap.lua"
     player_object_location = "N:/WoW/World of Warcraft/_retail_/Interface/AddOns/wow_ap/player_object.lua"
 
@@ -90,7 +93,9 @@ class WOWContext(CommonContext):
                         equipment_index = (item_id % 221522_2000000) - 1
                         self.equipment[equipment_index] = self.equipment[equipment_index] + 1
             lua_txt = self.create_player_object_lua_string()
-            self.overwrite_data_file(lua_txt)
+            if lua_txt != self.last_sent_lua_txt:
+                self.overwrite_data_file(lua_txt)
+                self.last_sent_lua_txt = lua_txt
 
         if cmd in {"RoomUpdate"}:
             if "checked_locations" in args:
@@ -138,21 +143,31 @@ async def game_watcher(ctx: WOWContext):
             await ctx.send_msgs(sync_msg)
             ctx.syncing = False
         sending = []
-        f = open(ctx.saved_variables_location, "r")
-        file_contents = f.read().splitlines()
-        f.close()
-        for line in file_contents:
-            if len(line) > 0:
-                if line[0].isdigit():
-                    sending.append(int(line[:-1]) + 221523_0000000)
+        should_read = False
+        file_last_modified_date = time.localtime((os.stat(ctx.saved_variables_location).st_mtime))
+        if ctx.communication_file_last_updated is None:
+            should_read = True
+        elif ctx.communication_file_last_updated != file_last_modified_date:
+            should_read = True
+        if should_read:
+            f = open(ctx.saved_variables_location, "r")
+            file_contents = f.read().splitlines()
+            f.close()
+            for line in file_contents:
+                if len(line) > 0:
+                    if line[0].isdigit():
+                        sending.append(int(line[:-1]) + 221523_0000000)
+            ctx.communication_file_last_updated = file_last_modified_date
         victory = False
-        ctx.locations_checked = sending
-        message = [{"cmd": 'LocationChecks', "locations": sending}]
-        await ctx.send_msgs(message)
-        if not ctx.finished_game and victory:
-            await ctx.send_msgs([{"cmd": "StatusUpdate", "status": ClientStatus.CLIENT_GOAL}])
-            ctx.finished_game = True
-        await asyncio.sleep(0.1)
+        if sending != ctx.last_sent_locations or len(sending) == 0:
+            ctx.locations_checked = sending
+            message = [{"cmd": 'LocationChecks', "locations": sending}]
+            await ctx.send_msgs(message)
+            if not ctx.finished_game and victory:
+                await ctx.send_msgs([{"cmd": "StatusUpdate", "status": ClientStatus.CLIENT_GOAL}])
+                ctx.finished_game = True
+            ctx.last_sent_locations = sending.copy()
+        await asyncio.sleep(1)
 
 
 def launch():
