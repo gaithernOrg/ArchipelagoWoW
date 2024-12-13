@@ -7,6 +7,7 @@ import shutil
 import logging
 import re
 import time
+from tkinter import filedialog
 from calendar import timegm
 
 import ModuleUpdate
@@ -39,13 +40,15 @@ class WOWContext(CommonContext):
     command_processor: int = WOWClientCommandProcessor
     game = "World of Warcraft"
     items_handling = 0b111  # full remote
-    npcs = []
+    subzones = []
     equipment = [1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1,1]
+    honor = 0
+    required_honor = 999
     last_sent_lua_txt = ""
     last_sent_locations = []
     communication_file_last_updated = None
-    saved_variables_location = "N:/WoW/World of Warcraft/_retail_/WTF/Account/77341304#1/Dalaran/Kailaylarl/SavedVariables/wow_ap.lua"
-    player_object_location = "N:/WoW/World of Warcraft/_retail_/Interface/AddOns/wow_ap/player_object.lua"
+    saved_variables_location = str(filedialog.askopenfilename(title = "Select your wow_ap.lua saved variable file"))
+    player_object_location = str(filedialog.askopenfilename(title = "Select your player_object.lua file in the mod folder"))
 
     def __init__(self, server_address, password):
         super(WOWContext, self).__init__(server_address, password)
@@ -80,16 +83,17 @@ class WOWContext(CommonContext):
 
     def on_package(self, cmd: str, args: dict):
         if cmd in {"Connected"}:
-            pass
+            # Handle Slot Data
+            self.slot_data = args['slot_data']
 
         if cmd in {"ReceivedItems"}:
             start_index = args["index"]
             if start_index != len(self.items_received):
                 for item in args['items']:
                     item_id = NetworkItem(*item).item
-                    if item_id >= 221522_1000000 and item_id < 221522_2000000: # NPC
-                        self.npcs.append(item_id % 221522_1000000)
-                    elif item_id > 221522_2000000: # Equipment
+                    if item_id >= 221522_1000000 and item_id < 221522_2000000: # SubZone
+                        self.subzones.append(item_id % 221522_1000000)
+                    elif item_id > 221522_2000000 and item_id < 221522_3000000: # Equipment
                         equipment_index = (item_id % 221522_2000000) - 1
                         self.equipment[equipment_index] = self.equipment[equipment_index] + 1
             lua_txt = self.create_player_object_lua_string()
@@ -121,9 +125,9 @@ _G["ap_player"]["Highest Quality"] = {"""
         for equipment_rarity_unlocked in self.equipment:
             lua_txt = lua_txt + str(equipment_rarity_unlocked) + ","
         lua_txt = lua_txt[:-1] + """}
-_G["ap_player"]["Available NPCs"] = {"""
-        for npc in self.npcs:
-            lua_txt = lua_txt + str(npc) + ","
+_G["ap_player"]["Available SubZones"] = {"""
+        for subzone in self.subzones:
+            lua_txt = lua_txt + str(subzone) + ","
         lua_txt = lua_txt[:-1] + """}"""
         return lua_txt
     
@@ -143,6 +147,7 @@ async def game_watcher(ctx: WOWContext):
             await ctx.send_msgs(sync_msg)
             ctx.syncing = False
         sending = []
+        victory = False
         should_read = False
         file_last_modified_date = time.localtime((os.stat(ctx.saved_variables_location).st_mtime))
         if ctx.communication_file_last_updated is None:
@@ -157,8 +162,11 @@ async def game_watcher(ctx: WOWContext):
                 if len(line) > 0:
                     if line[0].isdigit():
                         sending.append(int(line[:-1]) + 221523_0000000)
+                    elif line.startswith("Honor"):
+                        if "honor_to_win" in ctx.slot_data.keys():
+                            if int(line.replace("Honor = ", "")) >= ctx.slot_data["honor_to_win"]:
+                                victory = True
             ctx.communication_file_last_updated = file_last_modified_date
-        victory = False
         if sending != ctx.last_sent_locations or len(sending) == 0:
             ctx.locations_checked = sending
             message = [{"cmd": 'LocationChecks', "locations": sending}]

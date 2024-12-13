@@ -37,8 +37,8 @@ class WOWWeb(WebWorld):
 
 class WOWWorld(World):
     """
-    World of Warcraft is an action RPG following Sora on his journey 
-    through many worlds to find Riku and Kairi.
+    World of Warcraft (WoW) is a 2004 massively multiplayer 
+    online role-playing (MMORPG) video game produced by Blizzard Entertainment.
     """
     game = "World of Warcraft"
     options_dataclass = WOWOptions
@@ -58,17 +58,19 @@ class WOWWorld(World):
         item_pool = []
         total_locations = len(self.multiworld.get_unfilled_locations(self.player))
         
-        precollected_items = ["NPC: Elwynn Forest - Marshal McBride"]
+        precollected_items = ["Northshire Valley"]
         for precollected_item in precollected_items:
             self.multiworld.push_precollected(self.create_item(precollected_item))
         
-        non_filler_item_categories = ["NPC", "Equipment"]
+        non_filler_item_categories = ["SubZone", "Equipment", "Macguffin"]
         for name, data in item_table.items():
             quantity = data.max_quantity
             if data.category not in non_filler_item_categories:
                 continue
             if name in precollected_items:
                 continue
+            if name == "Honor":
+                item_pool += [self.create_item(name) for _ in range(0, self.options.honor_in_pool)]
             else:
                 item_pool += [self.create_item(name) for _ in range(0, quantity)]
         
@@ -79,13 +81,16 @@ class WOWWorld(World):
         self.multiworld.itempool += item_pool
 
     def place_predetermined_items(self) -> None:
-        self.get_location("Elwynn Forest - Report to Goldshire").place_locked_item(self.create_item("Victory"))
+        self.get_location("Become a Champion of Azeroth").place_locked_item(self.create_event("Victory"))
 
     def get_filler_item_name(self) -> str:
         weights = [data.weight for data in self.fillers.values()]
         return self.random.choices([filler for filler in self.fillers.keys()], weights)[0]
-
     
+    def fill_slot_data(self) -> dict:
+        slot_data = {"honor_to_win": int(self.options.honor_to_win)}
+        return slot_data
+
     def create_item(self, name: str) -> WOWItem:
         data = item_table[name]
         return WOWItem(name, data.classification, data.code, self.player)
